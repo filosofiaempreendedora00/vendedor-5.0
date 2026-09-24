@@ -213,3 +213,21 @@ button { cursor: pointer; }
   font-size: 12px; font-weight: 600; background: var(--c-bg); color: var(--c);
 }
 .point-add-btn:hover { filter: brightness(1.4); }
+
+/* Vídeo incorporado */
+.review, .review-notes { display: flex; flex-direction: column; gap: 24px; }
+.detail.has-video { max-width: 1680px; }
+.video-panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.video-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video-unsupported { padding: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.video-unsupported p { margin: 0; }
+.video-unsupported .btn { margin-top: 12px; }
+
+/* Telas largas: vídeo fixo à esquerda, anotações à direita */
+@media (min-width: 1280px) {
+  .has-video .review { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr); align-items: start; }
+  .has-video .video-panel { position: sticky; top: 24px; }
+  .has-video .columns { grid-template-columns: 1fr; }
+  .has-video .column { min-height: 0; }
+}

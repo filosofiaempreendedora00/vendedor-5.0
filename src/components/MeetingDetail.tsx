@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Meeting, MeetingPatch, MeetingPoint, PointKind } from '../types'
 import { normalizeUrl } from '../lib/format'
 import PointColumn from './PointColumn'
+import VideoPanel from './VideoPanel'
 import { useDirty } from '../lib/unsaved'
 
 interface Props {
@@ -18,6 +19,17 @@ export default function MeetingDetail({ meeting, points, onUpdate, onDelete, onA
   const [title, setTitle] = useState(meeting.title)
   const [url, setUrl] = useState(meeting.url ?? '')
   const [notes, setNotes] = useState(meeting.notes)
+  const [showVideo, setShowVideo] = useState(() => {
+    try { return localStorage.getItem('closer-lab:show-video') !== '0' } catch { return true }
+  })
+  const videoOn = showVideo && !!meeting.url
+
+  function toggleVideo() {
+    setShowVideo(v => {
+      try { localStorage.setItem('closer-lab:show-video', v ? '0' : '1') } catch { /* ignora */ }
+      return !v
+    })
+  }
 
   // Salva as notas automaticamente após uma pausa na digitação
   useEffect(() => {
@@ -43,7 +55,7 @@ export default function MeetingDetail({ meeting, points, onUpdate, onDelete, onA
   const blurOnEnter = (e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && e.currentTarget.blur()
 
   return (
-    <div className="detail">
+    <div className={`detail ${videoOn ? 'has-video' : ''}`}>
       <header className="detail-head">
         <input
           className="title-input"
@@ -77,12 +89,20 @@ export default function MeetingDetail({ meeting, points, onUpdate, onDelete, onA
               </a>
             )}
           </div>
+          {meeting.url && (
+            <button className="btn btn-ghost btn-sm" onClick={toggleVideo}>
+              {showVideo ? 'Ocultar vídeo' : '▶ Mostrar vídeo'}
+            </button>
+          )}
           <button className="btn btn-danger-ghost btn-sm" onClick={onDelete} title="Excluir reunião">
             Excluir
           </button>
         </div>
       </header>
 
+      <div className="review">
+      {videoOn && <VideoPanel url={meeting.url!} />}
+      <div className="review-notes">
       <section className="columns">
         {(['positive', 'negative'] as const).map(kind => (
           <PointColumn
@@ -107,6 +127,8 @@ export default function MeetingDetail({ meeting, points, onUpdate, onDelete, onA
           rows={4}
         />
       </section>
+      </div>
+      </div>
     </div>
   )
 }
