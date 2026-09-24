@@ -20,3 +20,13 @@ export interface MeetingPoint {
 
 export type MeetingInput = Pick<Meeting, 'title' | 'url' | 'meeting_date'>
 export type MeetingPatch = Partial<Pick<Meeting, 'title' | 'url' | 'meeting_date' | 'notes'>>
+
+export interface Prompt {
+  id: string
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export type PromptPatch = Partial<Pick<Prompt, 'title' | 'content'>>

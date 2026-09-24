@@ -3,30 +3,23 @@ import type { Repo } from '../lib/repo'
 import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind } from '../types'
 import { formatDate } from '../lib/format'
 import { track } from '../lib/unsaved'
-import SaveIndicator from './SaveIndicator'
+import { useToast } from '../lib/useToast'
+import Layout, { type ShellProps } from './Layout'
 import MeetingDetail from './MeetingDetail'
 import NewMeetingModal from './NewMeetingModal'
 
-interface Props {
+interface Props extends ShellProps {
   repo: Repo
-  userEmail: string | null
-  onSignOut?: () => void
 }
 
-export default function Workspace({ repo, userEmail, onSignOut }: Props) {
+export default function MeetingsPage({ repo, ...shell }: Props) {
   const [meetings, setMeetings] = useState<Meeting[]>([])
   const [points, setPoints] = useState<MeetingPoint[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState<string | null>(null)
-
-  const fail = useCallback((err: unknown) => {
-    console.error(err)
-    setToast(err instanceof Error ? err.message : (err as { message?: string })?.message ?? 'Erro ao salvar')
-    setTimeout(() => setToast(null), 5000)
-  }, [])
+  const { toast, fail } = useToast()
 
   useEffect(() => {
     Promise.all([repo.listMeetings(), repo.listPoints()])
@@ -38,20 +31,6 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
       .catch(fail)
       .finally(() => setLoading(false))
   }, [repo, fail])
-
-  // Atalho: "N" cria nova reunião
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement
-      if (t.closest('input, textarea, [contenteditable]') || e.metaKey || e.ctrlKey) return
-      if (e.key.toLowerCase() === 'n') {
-        e.preventDefault()
-        setCreating(true)
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
 
   const counts = useMemo(() => {
     const c: Record<string, { positive: number; negative: number }> = {}
@@ -67,6 +46,8 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
     if (!q) return meetings
     return meetings.filter(m => m.title.toLowerCase().includes(q))
   }, [meetings, query])
+
+  const openNew = useCallback(() => setCreating(true), [])
 
   const selected = meetings.find(m => m.id === selectedId) ?? null
 
@@ -138,21 +119,16 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
   }
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-head">
-          <div className="brand">
-            <span className="brand-mark">◆</span> Closer Lab
-          </div>
-          <SaveIndicator />
-          <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)} title="Nova reunião (N)">
-            + Nova
-          </button>
-        </div>
-
-        <input className="search" placeholder="Buscar reunião…" value={query} onChange={e => setQuery(e.target.value)} />
-
-        <nav className="meeting-list">
+    <Layout
+      {...shell}
+      onNew={openNew}
+      query={query}
+      onQuery={setQuery}
+      searchPlaceholder="Buscar reunião…"
+      toast={toast}
+      overlay={creating && <NewMeetingModal onCancel={() => setCreating(false)} onCreate={createMeeting} />}
+      list={
+        <>
           {loading && <div className="muted pad">Carregando…</div>}
           {!loading && filtered.length === 0 && (
             <div className="muted pad">{meetings.length ? 'Nenhuma reunião encontrada.' : 'Nenhuma reunião ainda.'}</div>
@@ -172,24 +148,10 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
               </button>
             )
           })}
-        </nav>
-
-        <div className="sidebar-foot">
-          {userEmail ? (
-            <>
-              <span className="muted ellipsis" title={userEmail}>{userEmail}</span>
-              <button className="link-btn" onClick={onSignOut}>Sair</button>
-            </>
-          ) : (
-            <span className="warn-text" title="Configure o Supabase no arquivo .env para salvar na nuvem">
-              ● Modo local (dados só neste navegador)
-            </span>
-          )}
-        </div>
-      </aside>
-
-      <main className="main">
-        {selected ? (
+        </>
+      }
+      main={
+        selected ? (
           <MeetingDetail
             key={selected.id}
             meeting={selected}
@@ -206,14 +168,11 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
               <div className="empty-icon">◆</div>
               <h2>Registre sua primeira reunião</h2>
               <p className="muted">Anote o que funcionou e o que precisa melhorar em cada call. É assim que o Closer evolui.</p>
-              <button className="btn btn-primary" onClick={() => setCreating(true)}>+ Nova reunião</button>
+              <button className="btn btn-primary" onClick={openNew}>+ Nova reunião</button>
             </div>
           )
-        )}
-      </main>
-
-      {creating && <NewMeetingModal onCancel={() => setCreating(false)} onCreate={createMeeting} />}
-      {toast && <div className="toast">{toast}</div>}
-    </div>
+        )
+      }
+    />
   )
 }

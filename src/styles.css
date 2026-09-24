@@ -240,3 +240,21 @@ button { cursor: pointer; }
 
 /* Blocos com a mesma altura, exceto quando um deles está colapsado */
 .columns:not(:has(.collapsed)) { align-items: stretch; }
+
+/* Abas de seção */
+.tabs { display: flex; gap: 4px; margin: 0 12px 10px; padding: 3px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+.tab { flex: 1; background: none; border: none; border-radius: 7px; padding: 7px 0; font-weight: 600; font-size: 13px; color: var(--muted); }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--panel-2); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.foot-actions { display: flex; gap: 12px; flex: none; }
+.small { font-size: 12px; }
+.spacer { flex: 1; }
+
+/* Prompts */
+.prompt-detail { height: 100%; }
+.prompt-editor {
+  flex: 1; min-height: 360px; width: 100%; background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; outline: none; resize: none;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 13.5px; line-height: 1.7;
+}
+.prompt-editor:focus { border-color: var(--accent); }

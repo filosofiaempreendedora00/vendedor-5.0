@@ -4,6 +4,7 @@ Ferramenta pessoal de auto-aperfeiçoamento como Closer.
 
 ## Features
 1. **Revisão de reuniões** — nome, link da gravação, data, pontos positivos, pontos a melhorar e principal aprendizado.
+2. **Biblioteca de prompts** — prompts nomeados, com busca e botão de copiar.
 
 ## Rodar
 ```bash
@@ -14,7 +15,7 @@ Sem `.env`, o app roda em **modo local** (dados só no navegador). Com Supabase 
 
 ## Configurar o Supabase
 1. Crie um projeto em https://supabase.com.
-2. **SQL Editor → New query** → cole o conteúdo de `supabase/schema.sql` → **Run**.
+2. **SQL Editor → New query** → rode, em ordem, cada arquivo de `supabase/` (`001_schema.sql`, `002_prompts.sql`, …): cole o conteúdo → **Run**.
 3. **Project Settings → API**: copie a *Project URL* e a *anon public key*.
 4. Copie `.env.example` para `.env` e preencha as duas variáveis.
 5. **Authentication → URL Configuration**: *Site URL* = `http://localhost:3000` (adicione também a URL de produção quando fizer deploy).
@@ -23,4 +24,4 @@ Sem `.env`, o app roda em **modo local** (dados só no navegador). Com Supabase 
 ## Estrutura
 - `src/lib/repo.ts` — camada de dados (Supabase ou localStorage)
 - `src/components/` — telas
-- `supabase/schema.sql` — tabelas + RLS (cada usuário só vê os próprios dados)
+- `supabase/*.sql` — tabelas + RLS (cada usuário só vê os próprios dados), numeradas na ordem de execução
