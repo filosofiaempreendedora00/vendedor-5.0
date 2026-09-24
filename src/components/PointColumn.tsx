@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { MeetingPoint, PointKind } from '../types'
+import { useDirty } from '../lib/unsaved'
 
 const LABELS: Record<PointKind, { title: string; icon: string; placeholder: string }> = {
   positive: { title: 'Pontos positivos', icon: '▲', placeholder: 'O que funcionou bem? (Enter para adicionar)' },
@@ -19,15 +20,16 @@ export default function PointColumn({ kind, points, onAdd, onUpdate, onDelete }:
   const [adding, setAdding] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const l = LABELS[kind]
+  useDirty(draft.trim() !== '')
 
-  async function add() {
+  async function add(refocus = true) {
     const v = draft.trim()
     if (!v || adding) return
     setAdding(true)
     await onAdd(v)
     setDraft('')
     setAdding(false)
-    inputRef.current?.focus()
+    if (refocus) inputRef.current?.focus()
   }
 
   return (
@@ -44,6 +46,7 @@ export default function PointColumn({ kind, points, onAdd, onUpdate, onDelete }:
         ))}
       </ul>
 
+      <div className="point-add-wrap">
       <textarea
         ref={inputRef}
         className="point-add"
@@ -52,6 +55,7 @@ export default function PointColumn({ kind, points, onAdd, onUpdate, onDelete }:
         placeholder={l.placeholder}
         disabled={adding}
         onChange={e => setDraft(e.target.value)}
+        onBlur={() => add(false)}
         onKeyDown={e => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
@@ -59,6 +63,12 @@ export default function PointColumn({ kind, points, onAdd, onUpdate, onDelete }:
           }
         }}
       />
+      {draft.trim() && (
+        <button className="point-add-btn" onMouseDown={e => e.preventDefault()} onClick={() => add()}>
+          Adicionar ↵
+        </button>
+      )}
+      </div>
     </div>
   )
 }
@@ -66,6 +76,7 @@ export default function PointColumn({ kind, points, onAdd, onUpdate, onDelete }:
 function PointItem({ point, onUpdate, onDelete }: { point: MeetingPoint; onUpdate: Props['onUpdate']; onDelete: Props['onDelete'] }) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(point.content)
+  useDirty(editing && value.trim() !== point.content)
 
   function commit() {
     setEditing(false)

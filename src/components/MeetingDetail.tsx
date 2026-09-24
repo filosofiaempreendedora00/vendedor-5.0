@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Meeting, MeetingPatch, MeetingPoint, PointKind } from '../types'
 import { normalizeUrl } from '../lib/format'
 import PointColumn from './PointColumn'
+import { useDirty } from '../lib/unsaved'
 
 interface Props {
   meeting: Meeting
@@ -21,9 +22,11 @@ export default function MeetingDetail({ meeting, points, onUpdate, onDelete, onA
   // Salva as notas automaticamente após uma pausa na digitação
   useEffect(() => {
     if (notes === meeting.notes) return
-    const t = setTimeout(() => onUpdate({ notes }), 800)
+    const t = setTimeout(() => onUpdate({ notes }), 400)
     return () => clearTimeout(t)
   }, [notes]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useDirty(title.trim() !== meeting.title || (normalizeUrl(url) ?? null) !== (meeting.url ?? null) || notes !== meeting.notes)
 
   function saveTitle() {
     const v = title.trim()

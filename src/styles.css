@@ -193,3 +193,23 @@ button { cursor: pointer; }
   .detail { padding: 20px 16px 40px; }
   .title-input { font-size: 22px; }
 }
+
+/* Save status */
+.sidebar-head .brand { flex: 1; }
+.sidebar-head { gap: 10px; }
+.save-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
+.save-saving .save-dot { background: var(--accent); animation: pulse 1s infinite; }
+.save-unsaved { color: var(--warn); }
+.save-unsaved .save-dot { background: var(--warn); }
+.save-error { color: var(--neg); }
+.save-error .save-dot { background: var(--neg); }
+@keyframes pulse { 50% { opacity: .3; } }
+
+.point-add-wrap { margin-top: auto; position: relative; display: flex; flex-direction: column; }
+.point-add-wrap .point-add { margin-top: 0; }
+.point-add-btn {
+  position: absolute; right: 6px; bottom: 6px; border: none; border-radius: 6px; padding: 4px 8px;
+  font-size: 12px; font-weight: 600; background: var(--c-bg); color: var(--c);
+}
+.point-add-btn:hover { filter: brightness(1.4); }

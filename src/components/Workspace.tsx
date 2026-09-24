@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Repo } from '../lib/repo'
 import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind } from '../types'
 import { formatDate } from '../lib/format'
+import { track } from '../lib/unsaved'
+import SaveIndicator from './SaveIndicator'
 import MeetingDetail from './MeetingDetail'
 import NewMeetingModal from './NewMeetingModal'
 
@@ -70,7 +72,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
 
   async function createMeeting(input: MeetingInput) {
     try {
-      const m = await repo.createMeeting(input)
+      const m = await track(repo.createMeeting(input))
       setMeetings(prev => [m, ...prev].sort((a, b) => b.meeting_date.localeCompare(a.meeting_date) || b.created_at.localeCompare(a.created_at)))
       setSelectedId(m.id)
       setCreating(false)
@@ -83,7 +85,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
     const before = meetings
     setMeetings(prev => prev.map(m => (m.id === id ? { ...m, ...patch } : m)))
     try {
-      await repo.updateMeeting(id, patch)
+      await track(repo.updateMeeting(id, patch))
     } catch (e) {
       setMeetings(before)
       fail(e)
@@ -94,7 +96,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
     const m = meetings.find(x => x.id === id)
     if (!m || !confirm(`Excluir a reunião "${m.title}" e todas as anotações dela?`)) return
     try {
-      await repo.deleteMeeting(id)
+      await track(repo.deleteMeeting(id))
       const rest = meetings.filter(x => x.id !== id)
       setMeetings(rest)
       setPoints(prev => prev.filter(p => p.meeting_id !== id))
@@ -106,7 +108,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
 
   async function addPoint(meetingId: string, kind: PointKind, content: string) {
     try {
-      const p = await repo.addPoint(meetingId, kind, content)
+      const p = await track(repo.addPoint(meetingId, kind, content))
       setPoints(prev => [...prev, p])
     } catch (e) {
       fail(e)
@@ -117,7 +119,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
     const before = points
     setPoints(prev => prev.map(p => (p.id === id ? { ...p, content } : p)))
     try {
-      await repo.updatePoint(id, content)
+      await track(repo.updatePoint(id, content))
     } catch (e) {
       setPoints(before)
       fail(e)
@@ -128,7 +130,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
     const before = points
     setPoints(prev => prev.filter(p => p.id !== id))
     try {
-      await repo.deletePoint(id)
+      await track(repo.deletePoint(id))
     } catch (e) {
       setPoints(before)
       fail(e)
@@ -142,6 +144,7 @@ export default function Workspace({ repo, userEmail, onSignOut }: Props) {
           <div className="brand">
             <span className="brand-mark">◆</span> Closer Lab
           </div>
+          <SaveIndicator />
           <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)} title="Nova reunião (N)">
             + Nova
           </button>
