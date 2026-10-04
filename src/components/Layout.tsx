@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import SaveIndicator from './SaveIndicator'
 
-export type Section = 'meetings' | 'prompts'
+export type Section = 'meetings' | 'prompts' | 'playbook'
 
 export interface ShellProps {
   section: Section
@@ -13,9 +13,10 @@ export interface ShellProps {
 
 interface Props extends ShellProps {
   onNew: () => void
-  query: string
-  onQuery: (q: string) => void
-  searchPlaceholder: string
+  newTitle?: string
+  query?: string
+  onQuery?: (q: string) => void
+  searchPlaceholder?: string
   list: ReactNode
   main: ReactNode
   overlay?: ReactNode
@@ -25,6 +26,7 @@ interface Props extends ShellProps {
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'meetings', label: 'Reuniões' },
   { id: 'prompts', label: 'Prompts' },
+  { id: 'playbook', label: 'Processo' },
 ]
 
 export default function Layout(p: Props) {
@@ -52,7 +54,7 @@ export default function Layout(p: Props) {
             <span className="brand-mark">◆</span> Closer Lab
           </div>
           <SaveIndicator />
-          <button className="btn btn-primary btn-sm" onClick={onNew} title="Novo (N)">
+          <button className="btn btn-primary btn-sm" onClick={onNew} title={p.newTitle ?? 'Novo (N)'}>
             + Novo
           </button>
         </div>
@@ -65,7 +67,9 @@ export default function Layout(p: Props) {
           ))}
         </div>
 
-        <input className="search" placeholder={p.searchPlaceholder} value={p.query} onChange={e => p.onQuery(e.target.value)} />
+        {p.onQuery && (
+          <input className="search" placeholder={p.searchPlaceholder} value={p.query} onChange={e => p.onQuery!(e.target.value)} />
+        )}
 
         <nav className="meeting-list">{p.list}</nav>
 

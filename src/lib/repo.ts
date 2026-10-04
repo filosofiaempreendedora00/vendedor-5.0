@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind, Prompt, PromptPatch } from '../types'
+import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind, Prompt, PromptPatch, PlaybookDoc, PlaybookVersion } from '../types'
 
 /** Camada de dados. Supabase quando configurado; localStorage como modo de teste. */
 export interface Repo {
@@ -15,6 +15,10 @@ export interface Repo {
   createPrompt(title: string): Promise<Prompt>
   updatePrompt(id: string, patch: PromptPatch): Promise<void>
   deletePrompt(id: string): Promise<void>
+  getPlaybook(): Promise<PlaybookDoc | null>
+  savePlaybook(content: PlaybookDoc): Promise<void>
+  listPlaybookVersions(): Promise<PlaybookVersion[]>
+  createPlaybookVersion(label: string, content: PlaybookDoc): Promise<PlaybookVersion>
 }
 
 export const byTitle = (a: Prompt, b: Prompt) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' })
@@ -62,18 +66,31 @@ export function supabaseRepo(db: SupabaseClient): Repo {
     async deletePrompt(id) {
       check(await db.from('prompts').delete().eq('id', id))
     },
+    async getPlaybook() {
+      const row = check(await db.from('playbooks').select('content').maybeSingle()) as { content: PlaybookDoc } | null
+      return row?.content ?? null
+    },
+    async savePlaybook(content) {
+      check(await db.from('playbooks').upsert({ content }, { onConflict: 'user_id' }))
+    },
+    async listPlaybookVersions() {
+      return check(await db.from('playbook_versions').select('*').order('created_at', { ascending: false })) as PlaybookVersion[]
+    },
+    async createPlaybookVersion(label, content) {
+      return check(await db.from('playbook_versions').insert({ label, content }).select().single()) as PlaybookVersion
+    },
   }
 }
 
 const KEY = 'closer-lab:v1'
-interface LocalState { meetings: Meeting[]; points: MeetingPoint[]; prompts: Prompt[] }
+interface LocalState { meetings: Meeting[]; points: MeetingPoint[]; prompts: Prompt[]; playbook: PlaybookDoc | null; versions: PlaybookVersion[] }
 
 export function localRepo(): Repo {
   const load = (): LocalState => {
     try {
-      return { meetings: [], points: [], prompts: [], ...JSON.parse(localStorage.getItem(KEY) || '') }
+      return { meetings: [], points: [], prompts: [], playbook: null, versions: [], ...JSON.parse(localStorage.getItem(KEY) || '') }
     } catch {
-      return { meetings: [], points: [], prompts: [] }
+      return { meetings: [], points: [], prompts: [], playbook: null, versions: [] }
     }
   }
   const save = (s: LocalState) => localStorage.setItem(KEY, JSON.stringify(s))
@@ -128,6 +145,21 @@ export function localRepo(): Repo {
     async deletePrompt(id) {
       const s = load()
       s.prompts = s.prompts.filter(p => p.id !== id); save(s)
+    },
+    async getPlaybook() {
+      return load().playbook
+    },
+    async savePlaybook(content) {
+      const s = load()
+      s.playbook = content; save(s)
+    },
+    async listPlaybookVersions() {
+      return load().versions.sort((a, b) => b.created_at.localeCompare(a.created_at))
+    },
+    async createPlaybookVersion(label, content) {
+      const s = load()
+      const v: PlaybookVersion = { id: crypto.randomUUID(), label, content, created_at: now() }
+      s.versions.push(v); save(s); return v
     },
   }
 }

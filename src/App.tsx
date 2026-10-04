@@ -6,6 +6,7 @@ import { todayISO } from './lib/format'
 import Login from './components/Login'
 import MeetingsPage from './components/MeetingsPage'
 import PromptsPage from './components/PromptsPage'
+import PlaybookPage from './components/PlaybookPage'
 import type { Section } from './components/Layout'
 
 const SECTION_KEY = 'closer-lab:section'
@@ -14,7 +15,12 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [ready, setReady] = useState(!supabase)
   const [section, setSection] = useState<Section>(() => {
-    try { return localStorage.getItem(SECTION_KEY) === 'prompts' ? 'prompts' : 'meetings' } catch { return 'meetings' }
+    try {
+      const v = localStorage.getItem(SECTION_KEY)
+      return v === 'prompts' || v === 'playbook' ? v : 'meetings'
+    } catch {
+      return 'meetings'
+    }
   })
 
   useEffect(() => {
@@ -35,8 +41,11 @@ export default function App() {
   }
 
   async function backup() {
-    const [meetings, points, prompts] = await Promise.all([repo.listMeetings(), repo.listPoints(), repo.listPrompts()])
-    const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), meetings, points, prompts }, null, 2)], { type: 'application/json' })
+    const [meetings, points, prompts, playbook, playbook_versions] = await Promise.all([
+      repo.listMeetings(), repo.listPoints(), repo.listPrompts(), repo.getPlaybook(), repo.listPlaybookVersions(),
+    ])
+    const data = { exported_at: new Date().toISOString(), meetings, points, prompts, playbook, playbook_versions }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `closer-lab-backup-${todayISO()}.json`
@@ -55,5 +64,7 @@ export default function App() {
     onBackup: backup,
   }
 
-  return section === 'prompts' ? <PromptsPage repo={repo} {...shell} /> : <MeetingsPage repo={repo} {...shell} />
+  if (section === 'prompts') return <PromptsPage repo={repo} {...shell} />
+  if (section === 'playbook') return <PlaybookPage repo={repo} {...shell} />
+  return <MeetingsPage repo={repo} {...shell} />
 }
