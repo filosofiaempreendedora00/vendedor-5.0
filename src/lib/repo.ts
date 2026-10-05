@@ -55,7 +55,7 @@ export function supabaseRepo(db: SupabaseClient): Repo {
       check(await db.from('meeting_points').delete().eq('id', id))
     },
     async listSnippets(kind) {
-      return (check(await db.from(kind).select('*')) as Snippet[]).sort(byTitle)
+      return (check(await db.from(kind).select('*')) as Snippet[]).map(x => ({ ...x, category: x.category ?? '' })).sort(byTitle)
     },
     async createSnippet(kind, title, category) {
       return check(await db.from(kind).insert({ title, category }).select().single()) as Snippet
