@@ -60,3 +60,33 @@ export interface PlaybookVersion {
   content: PlaybookDoc
   created_at: string
 }
+
+/** Item adicionado só no roteiro de um cliente, pendurado num item (ou seção) do modelo. */
+export interface Addition {
+  parentId: string
+  afterId: string | null
+  node: PNode
+}
+
+/** Diferenças de um cliente em relação ao modelo. O modelo continua sendo a fonte. */
+export interface ClientOverlay {
+  overrides: Record<string, { text?: string; kind?: NodeKind }>
+  hidden: string[]
+  additions: Addition[]
+  answers: Record<string, string>
+  checked: string[]
+}
+
+export interface ClientPlaybook {
+  id: string
+  name: string
+  company: string
+  meeting_date: string
+  context: string
+  notes: string
+  overlay: ClientOverlay
+  created_at: string
+  updated_at: string
+}
+
+export type ClientPlaybookPatch = Partial<Pick<ClientPlaybook, 'name' | 'company' | 'meeting_date' | 'context' | 'notes' | 'overlay'>>

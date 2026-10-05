@@ -5,7 +5,7 @@ Ferramenta pessoal de auto-aperfeiçoamento como Closer.
 ## Features
 1. **Revisão de reuniões** — nome, link da gravação, data, pontos positivos, pontos a melhorar e principal aprendizado.
 2. **Biblioteca de prompts** — prompts nomeados, com busca e botão de copiar.
-3. **Processo de reunião** — roteiro do pitch editável em árvore, com modo "usar na call" e histórico de versões.
+3. **Processo de reunião** — roteiro do pitch editável em árvore, com modo "usar na call" e histórico de versões. Cada cliente ganha um roteiro que herda o modelo, com personalizações, perguntas feitas e anotações.
 4. **Banco de mensagens** — mensagens prontas para leads, por categoria, com copiar em um clique.
 
 ## Rodar

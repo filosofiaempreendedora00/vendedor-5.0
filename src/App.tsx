@@ -42,10 +42,11 @@ export default function App() {
   }
 
   async function backup() {
-    const [meetings, points, prompts, messages, playbook, playbook_versions] = await Promise.all([
-      repo.listMeetings(), repo.listPoints(), repo.listSnippets('prompts'), repo.listSnippets('messages'), repo.getPlaybook(), repo.listPlaybookVersions(),
+    const [meetings, points, prompts, messages, playbook, playbook_versions, client_playbooks] = await Promise.all([
+      repo.listMeetings(), repo.listPoints(), repo.listSnippets('prompts'), repo.listSnippets('messages'),
+      repo.getPlaybook(), repo.listPlaybookVersions(), repo.listClientPlaybooks(),
     ])
-    const data = { exported_at: new Date().toISOString(), meetings, points, prompts, messages, playbook, playbook_versions }
+    const data = { exported_at: new Date().toISOString(), meetings, points, prompts, messages, playbook, playbook_versions, client_playbooks }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
