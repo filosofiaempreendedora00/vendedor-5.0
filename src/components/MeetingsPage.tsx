@@ -122,6 +122,7 @@ export default function MeetingsPage({ repo, ...shell }: Props) {
     <Layout
       {...shell}
       onNew={openNew}
+      newLabel="Nova reunião"
       query={query}
       onQuery={setQuery}
       searchPlaceholder="Buscar reunião…"

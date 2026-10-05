@@ -212,7 +212,7 @@ export default function PlaybookPage({ repo, ...shell }: Props) {
     <Layout
       {...shell}
       onNew={addBlock}
-      newTitle="Novo bloco no fim da reunião (N)"
+      newLabel="Novo bloco"
       list={doc ? nav : <div className="muted pad">Carregando…</div>}
       toast={toast}
       overlay={

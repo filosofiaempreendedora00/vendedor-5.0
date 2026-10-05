@@ -1,7 +1,15 @@
 import { useEffect, type ReactNode } from 'react'
 import SaveIndicator from './SaveIndicator'
+import Icon from './Icon'
 
-export type Section = 'meetings' | 'prompts' | 'playbook'
+export type Section = 'meetings' | 'playbook' | 'messages' | 'prompts'
+
+export const SECTIONS: { id: Section; label: string; hint: string }[] = [
+  { id: 'meetings', label: 'Reuniões', hint: 'Revisão das calls' },
+  { id: 'playbook', label: 'Processo', hint: 'Roteiro do pitch' },
+  { id: 'messages', label: 'Mensagens', hint: 'Textos para leads' },
+  { id: 'prompts', label: 'Prompts', hint: 'Biblioteca do Claude' },
+]
 
 export interface ShellProps {
   section: Section
@@ -13,7 +21,7 @@ export interface ShellProps {
 
 interface Props extends ShellProps {
   onNew: () => void
-  newTitle?: string
+  newLabel: string
   query?: string
   onQuery?: (q: string) => void
   searchPlaceholder?: string
@@ -23,14 +31,9 @@ interface Props extends ShellProps {
   toast?: string | null
 }
 
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: 'meetings', label: 'Reuniões' },
-  { id: 'prompts', label: 'Prompts' },
-  { id: 'playbook', label: 'Processo' },
-]
-
 export default function Layout(p: Props) {
   const { onNew } = p
+  const current = SECTIONS.find(s => s.id === p.section)!
 
   // Atalho: "N" cria um novo item na seção atual
   useEffect(() => {
@@ -48,42 +51,61 @@ export default function Layout(p: Props) {
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-head">
-          <div className="brand">
-            <span className="brand-mark">◆</span> Closer Lab
-          </div>
-          <SaveIndicator />
-          <button className="btn btn-primary btn-sm" onClick={onNew} title={p.newTitle ?? 'Novo (N)'}>
-            + Novo
-          </button>
+      <nav className="rail" aria-label="Seções">
+        <div className="rail-brand">
+          <span className="brand-mark">◆</span>
+          <span className="rail-label">Closer Lab</span>
         </div>
 
-        <div className="tabs" role="tablist">
+        <div className="rail-items">
           {SECTIONS.map(s => (
-            <button key={s.id} role="tab" aria-selected={p.section === s.id} className={`tab ${p.section === s.id ? 'active' : ''}`} onClick={() => p.onSection(s.id)}>
-              {s.label}
+            <button
+              key={s.id}
+              className={`rail-item ${p.section === s.id ? 'active' : ''}`}
+              aria-current={p.section === s.id ? 'page' : undefined}
+              onClick={() => p.onSection(s.id)}
+              title={s.label}
+            >
+              <Icon name={s.id} />
+              <span className="rail-text">
+                <span className="rail-label">{s.label}</span>
+                <span className="rail-hint">{s.hint}</span>
+              </span>
             </button>
           ))}
+        </div>
+
+        <div className="rail-foot">
+          <SaveIndicator />
+          {p.userEmail ? (
+            <span className="rail-email ellipsis" title={p.userEmail}>{p.userEmail}</span>
+          ) : (
+            <span className="warn-text rail-label" title="Configure o Supabase no arquivo .env para salvar na nuvem">● Modo local</span>
+          )}
+          <button className="rail-action" onClick={p.onBackup} title="Baixa um arquivo com todos os seus dados">
+            <Icon name="backup" size={17} /> <span className="rail-label">Baixar backup</span>
+          </button>
+          {p.onSignOut && (
+            <button className="rail-action" onClick={p.onSignOut} title="Sair">
+              <Icon name="logout" size={17} /> <span className="rail-label">Sair</span>
+            </button>
+          )}
+        </div>
+      </nav>
+
+      <aside className="sidebar">
+        <div className="sidebar-head">
+          <h2 className="sidebar-title">{current.label}</h2>
+          <button className="btn btn-primary btn-sm" onClick={onNew} title={`${p.newLabel} (N)`}>
+            + {p.newLabel}
+          </button>
         </div>
 
         {p.onQuery && (
           <input className="search" placeholder={p.searchPlaceholder} value={p.query} onChange={e => p.onQuery!(e.target.value)} />
         )}
 
-        <nav className="meeting-list">{p.list}</nav>
-
-        <div className="sidebar-foot">
-          {p.userEmail ? (
-            <span className="muted ellipsis" title={p.userEmail}>{p.userEmail}</span>
-          ) : (
-            <span className="warn-text" title="Configure o Supabase no arquivo .env para salvar na nuvem">● Modo local</span>
-          )}
-          <span className="foot-actions">
-            <button className="link-btn" onClick={p.onBackup} title="Baixa um arquivo com todas as suas reuniões e prompts">Backup</button>
-            {p.onSignOut && <button className="link-btn" onClick={p.onSignOut}>Sair</button>}
-          </span>
-        </div>
+        <div className="meeting-list">{p.list}</div>
       </aside>
 
       <main className="main">{p.main}</main>

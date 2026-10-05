@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind, Prompt, PromptPatch, PlaybookDoc, PlaybookVersion } from '../types'
+import type { Meeting, MeetingInput, MeetingPatch, MeetingPoint, PointKind, Snippet, SnippetKind, SnippetPatch, PlaybookDoc, PlaybookVersion } from '../types'
 
 /** Camada de dados. Supabase quando configurado; localStorage como modo de teste. */
 export interface Repo {
@@ -11,17 +11,17 @@ export interface Repo {
   addPoint(meetingId: string, kind: PointKind, content: string): Promise<MeetingPoint>
   updatePoint(id: string, content: string): Promise<void>
   deletePoint(id: string): Promise<void>
-  listPrompts(): Promise<Prompt[]>
-  createPrompt(title: string): Promise<Prompt>
-  updatePrompt(id: string, patch: PromptPatch): Promise<void>
-  deletePrompt(id: string): Promise<void>
+  listSnippets(kind: SnippetKind): Promise<Snippet[]>
+  createSnippet(kind: SnippetKind, title: string, category: string): Promise<Snippet>
+  updateSnippet(kind: SnippetKind, id: string, patch: SnippetPatch): Promise<void>
+  deleteSnippet(kind: SnippetKind, id: string): Promise<void>
   getPlaybook(): Promise<PlaybookDoc | null>
   savePlaybook(content: PlaybookDoc): Promise<void>
   listPlaybookVersions(): Promise<PlaybookVersion[]>
   createPlaybookVersion(label: string, content: PlaybookDoc): Promise<PlaybookVersion>
 }
 
-export const byTitle = (a: Prompt, b: Prompt) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' })
+export const byTitle = (a: Snippet, b: Snippet) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' })
 
 function check<T>(res: { data: T; error: unknown }): T {
   if (res.error) throw res.error
@@ -54,17 +54,17 @@ export function supabaseRepo(db: SupabaseClient): Repo {
     async deletePoint(id) {
       check(await db.from('meeting_points').delete().eq('id', id))
     },
-    async listPrompts() {
-      return (check(await db.from('prompts').select('*')) as Prompt[]).sort(byTitle)
+    async listSnippets(kind) {
+      return (check(await db.from(kind).select('*')) as Snippet[]).sort(byTitle)
     },
-    async createPrompt(title) {
-      return check(await db.from('prompts').insert({ title }).select().single()) as Prompt
+    async createSnippet(kind, title, category) {
+      return check(await db.from(kind).insert({ title, category }).select().single()) as Snippet
     },
-    async updatePrompt(id, patch) {
-      check(await db.from('prompts').update(patch).eq('id', id))
+    async updateSnippet(kind, id, patch) {
+      check(await db.from(kind).update(patch).eq('id', id))
     },
-    async deletePrompt(id) {
-      check(await db.from('prompts').delete().eq('id', id))
+    async deleteSnippet(kind, id) {
+      check(await db.from(kind).delete().eq('id', id))
     },
     async getPlaybook() {
       const row = check(await db.from('playbooks').select('content').maybeSingle()) as { content: PlaybookDoc } | null
@@ -83,14 +83,14 @@ export function supabaseRepo(db: SupabaseClient): Repo {
 }
 
 const KEY = 'closer-lab:v1'
-interface LocalState { meetings: Meeting[]; points: MeetingPoint[]; prompts: Prompt[]; playbook: PlaybookDoc | null; versions: PlaybookVersion[] }
+interface LocalState { meetings: Meeting[]; points: MeetingPoint[]; prompts: Snippet[]; messages: Snippet[]; playbook: PlaybookDoc | null; versions: PlaybookVersion[] }
 
 export function localRepo(): Repo {
   const load = (): LocalState => {
     try {
-      return { meetings: [], points: [], prompts: [], playbook: null, versions: [], ...JSON.parse(localStorage.getItem(KEY) || '') }
+      return { meetings: [], points: [], prompts: [], messages: [], playbook: null, versions: [], ...JSON.parse(localStorage.getItem(KEY) || '') }
     } catch {
-      return { meetings: [], points: [], prompts: [], playbook: null, versions: [] }
+      return { meetings: [], points: [], prompts: [], messages: [], playbook: null, versions: [] }
     }
   }
   const save = (s: LocalState) => localStorage.setItem(KEY, JSON.stringify(s))
@@ -130,21 +130,21 @@ export function localRepo(): Repo {
       const s = load()
       s.points = s.points.filter(p => p.id !== id); save(s)
     },
-    async listPrompts() {
-      return load().prompts.sort(byTitle)
+    async listSnippets(kind) {
+      return load()[kind].map(x => ({ ...x, category: x.category ?? '' })).sort(byTitle)
     },
-    async createPrompt(title) {
+    async createSnippet(kind, title, category) {
       const s = load()
-      const p: Prompt = { id: crypto.randomUUID(), title, content: '', created_at: now(), updated_at: now() }
-      s.prompts.push(p); save(s); return p
+      const x: Snippet = { id: crypto.randomUUID(), title, content: '', category, created_at: now(), updated_at: now() }
+      s[kind].push(x); save(s); return x
     },
-    async updatePrompt(id, patch) {
+    async updateSnippet(kind, id, patch) {
       const s = load()
-      s.prompts = s.prompts.map(p => (p.id === id ? { ...p, ...patch, updated_at: now() } : p)); save(s)
+      s[kind] = s[kind].map(x => (x.id === id ? { ...x, ...patch, updated_at: now() } : x)); save(s)
     },
-    async deletePrompt(id) {
+    async deleteSnippet(kind, id) {
       const s = load()
-      s.prompts = s.prompts.filter(p => p.id !== id); save(s)
+      s[kind] = s[kind].filter(x => x.id !== id); save(s)
     },
     async getPlaybook() {
       return load().playbook
