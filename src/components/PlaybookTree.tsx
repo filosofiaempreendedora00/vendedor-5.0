@@ -36,7 +36,7 @@ export default function PlaybookTree({ doc, ctx, modeLabels, onMode, onExpandAll
       {ctx.mode === 'edit' && (
         <p className="pb-help">
           <kbd>Enter</kbd> novo item · <kbd>Tab</kbd> / <kbd>⇧ Tab</kbd> muda o nível · <kbd>⌥ ↑↓</kbd> reordena · <kbd>⌫</kbd> em linha vazia apaga ·
-          links: <code>[texto](https://…)</code>
+          links: <code>[texto](https://…)</code> · destaque: <code>==PALAVRA==</code> · <kbd>⇧ Enter</kbd> quebra a linha
           {editHelp}
         </p>
       )}

@@ -215,14 +215,18 @@ export function countItems(doc: PlaybookDoc) {
   return n
 }
 
-/** Converte [texto](url) e links soltos em partes renderizáveis. */
-export function parseLinks(text: string): ({ text: string } | { text: string; href: string })[] {
-  const re = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/\S+)/g
-  const parts: ({ text: string } | { text: string; href: string })[] = []
+export type RichPart = { text: string } | { text: string; href: string } | { text: string; keyword: true }
+
+/** Converte [texto](url), links soltos e ==destaques== em partes renderizáveis. */
+export function parseLinks(text: string): RichPart[] {
+  const re = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/\S+)|==([^=\n]+)==/g
+  const parts: RichPart[] = []
   let last = 0
   for (const m of text.matchAll(re)) {
     if (m.index! > last) parts.push({ text: text.slice(last, m.index) })
-    parts.push(m[1] ? { text: m[1], href: m[2] } : { text: m[3], href: m[3] })
+    if (m[1]) parts.push({ text: m[1], href: m[2] })
+    else if (m[3]) parts.push({ text: m[3], href: m[3] })
+    else parts.push({ text: m[4].trim(), keyword: true })
     last = m.index! + m[0].length
   }
   if (last < text.length) parts.push({ text: text.slice(last) })

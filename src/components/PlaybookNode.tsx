@@ -54,6 +54,8 @@ function RichText({ text, placeholder }: { text: string; placeholder: string }) 
       {parseLinks(text).map((p, i) =>
         'href' in p ? (
           <a key={i} href={p.href} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{p.text}</a>
+        ) : 'keyword' in p ? (
+          <mark key={i} className="pn-kw">{p.text}</mark>
         ) : (
           <span key={i}>{p.text}</span>
         ),
