@@ -62,7 +62,7 @@ export function supabaseRepo(db: SupabaseClient): Repo {
       check(await db.from('meeting_points').delete().eq('id', id))
     },
     async listSnippets(kind) {
-      return (check(await db.from(kind).select('*')) as Snippet[]).map(x => ({ ...x, category: x.category ?? '' })).sort(byTitle)
+      return (check(await db.from(kind).select('*')) as Snippet[]).map(x => ({ ...x, category: x.category ?? '', parts: x.parts ?? [] })).sort(byTitle)
     },
     async createSnippet(kind, title, category) {
       return check(await db.from(kind).insert({ title, category }).select().single()) as Snippet
@@ -150,11 +150,11 @@ export function localRepo(): Repo {
       s.points = s.points.filter(p => p.id !== id); save(s)
     },
     async listSnippets(kind) {
-      return load()[kind].map(x => ({ ...x, category: x.category ?? '' })).sort(byTitle)
+      return load()[kind].map(x => ({ ...x, category: x.category ?? '', parts: x.parts ?? [] })).sort(byTitle)
     },
     async createSnippet(kind, title, category) {
       const s = load()
-      const x: Snippet = { id: crypto.randomUUID(), title, content: '', category, created_at: now(), updated_at: now() }
+      const x: Snippet = { id: crypto.randomUUID(), title, content: '', category, parts: [], created_at: now(), updated_at: now() }
       s[kind].push(x); save(s); return x
     },
     async updateSnippet(kind, id, patch) {

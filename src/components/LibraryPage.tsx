@@ -45,7 +45,7 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
     const filtered = q
-      ? items.filter(i => [i.title, i.content, i.category].some(t => t.toLowerCase().includes(q)))
+      ? items.filter(i => [i.title, i.content, i.category, ...i.parts.map(p => p.text)].some(t => t.toLowerCase().includes(q)))
       : items
     const map = new Map<string, Snippet[]>()
     for (const i of filtered) {
@@ -95,10 +95,10 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
     }
   }
 
-  async function quickCopy(s: Snippet) {
-    await copyText(s.content)
-    setCopiedId(s.id)
-    setTimeout(() => setCopiedId(c => (c === s.id ? null : c)), 1500)
+  async function quickCopy(id: string, text: string) {
+    await copyText(text)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(c => (c === id ? null : c)), 1500)
   }
 
   const showGroups = groups.length > 1 || (groups.length === 1 && groups[0][0] !== NO_CATEGORY)
@@ -126,33 +126,57 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
                   {cat} <span className="list-group-count">{list.length}</span>
                 </div>
               )}
-              {list.map(s => (
-                <div
-                  key={s.id}
-                  role="button"
-                  tabIndex={0}
-                  className={`meeting-item snippet-item ${s.id === selectedId ? 'active' : ''}`}
-                  onClick={() => setSelectedId(s.id)}
-                  onKeyDown={e => e.key === 'Enter' && setSelectedId(s.id)}
-                >
-                  <span className="meeting-item-title">{s.title}</span>
-                  <span className="meeting-item-meta">
-                    <span className="ellipsis">{s.content.trim().split('\n')[0] || 'Vazio'}</span>
-                  </span>
-                  {s.content.trim() && (
-                    <button
-                      className={`quick-copy ${copiedId === s.id ? 'done' : ''}`}
-                      title="Copiar sem abrir"
-                      onClick={e => {
-                        e.stopPropagation()
-                        quickCopy(s)
-                      }}
+              {list.map(s => {
+                const multi = s.parts.length > 0
+                const open = multi && s.id === selectedId
+                return (
+                  <div key={s.id} className={`snippet-entry ${open ? 'open' : ''}`}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className={`meeting-item snippet-item ${s.id === selectedId ? 'active' : ''}`}
+                      onClick={() => setSelectedId(s.id)}
+                      onKeyDown={e => e.key === 'Enter' && setSelectedId(s.id)}
                     >
-                      {copiedId === s.id ? '✓' : 'Copiar'}
-                    </button>
-                  )}
-                </div>
-              ))}
+                      <span className="meeting-item-title">{s.title}</span>
+                      <span className="meeting-item-meta">
+                        <span className="ellipsis">{multi ? `${s.parts.length} partes · ${s.parts.map(p => p.label).join(', ')}` : s.content.trim().split('\n')[0] || 'Vazio'}</span>
+                      </span>
+                      {!multi && s.content.trim() && (
+                        <button
+                          className={`quick-copy ${copiedId === s.id ? 'done' : ''}`}
+                          title="Copiar sem abrir"
+                          onClick={e => {
+                            e.stopPropagation()
+                            quickCopy(s.id, s.content)
+                          }}
+                        >
+                          {copiedId === s.id ? '✓' : 'Copiar'}
+                        </button>
+                      )}
+                    </div>
+                    {open && (
+                      <div className="sub-parts">
+                        {s.parts.map(p => (
+                          <div key={p.id} className="sub-part">
+                            <span className="sub-part-text">
+                              <span className="sub-part-label">{p.label}</span>
+                              <span className="ellipsis">{p.text || 'Vazio'}</span>
+                            </span>
+                            <button
+                              className={`quick-copy inline ${copiedId === p.id ? 'done' : ''}`}
+                              disabled={!p.text.trim()}
+                              onClick={() => quickCopy(p.id, p.text)}
+                            >
+                              {copiedId === p.id ? '✓' : 'Copiar'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </>

@@ -24,16 +24,24 @@ export type MeetingPatch = Partial<Pick<Meeting, 'title' | 'url' | 'meeting_date
 /** Texto reutilizável: prompts e mensagens prontas. */
 export type SnippetKind = 'prompts' | 'messages'
 
+/** Parte copiável de uma mensagem (ex.: pergunta e opções de uma enquete). */
+export interface SnippetPart {
+  id: string
+  label: string
+  text: string
+}
+
 export interface Snippet {
   id: string
   title: string
   content: string
   category: string
+  parts: SnippetPart[]
   created_at: string
   updated_at: string
 }
 
-export type SnippetPatch = Partial<Pick<Snippet, 'title' | 'content' | 'category'>>
+export type SnippetPatch = Partial<Pick<Snippet, 'title' | 'content' | 'category' | 'parts'>>
 
 export type NodeKind = 'item' | 'example' | 'note' | 'check'
 
