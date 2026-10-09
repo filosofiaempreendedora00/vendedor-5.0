@@ -31,7 +31,8 @@ const KINDS: { kind: NodeKind; label: string; title: string }[] = [
   { kind: 'item', label: '•', title: 'Etapa (numerada)' },
   { kind: 'example', label: '“”', title: 'Exemplo de fala / pergunta' },
   { kind: 'note', label: '✎', title: 'Observação' },
-  { kind: 'check', label: '☐', title: 'Checklist' },
+  { kind: 'check', label: '☐', title: 'Checklist (obrigatório)' },
+  { kind: 'pick', label: '◯', title: 'Pergunta opcional (escolha algumas)' },
 ]
 
 const PLACEHOLDER: Record<NodeKind, string> = {
@@ -39,6 +40,7 @@ const PLACEHOLDER: Record<NodeKind, string> = {
   example: 'Exemplo de fala ou pergunta…',
   note: 'Observação…',
   check: 'Item do checklist…',
+  pick: 'Pergunta opcional…',
 }
 
 const Chevron = () => (
@@ -68,9 +70,25 @@ export function NodeList({ nodes, depth, parentNum, prefix }: { nodes: MNode[]; 
   const nums = numberChildren(nodes, parentNum, prefix)
   return (
     <>
-      {nodes.map(n => (
-        <PlaybookNode key={n.id} node={n} depth={depth} num={nums.get(n.id)} />
+      {nodes.map((n, i) => (
+        <PickHint key={n.id} show={n.kind === 'pick' && nodes[i - 1]?.kind !== 'pick'}>
+          <PlaybookNode node={n} depth={depth} num={nums.get(n.id)} />
+        </PickHint>
       ))}
+    </>
+  )
+}
+
+/** Antes de cada grupo de perguntas opcionais, um aviso de que não é para usar todas. */
+function PickHint({ show, children }: { show: boolean; children: React.ReactNode }) {
+  if (!show) return <>{children}</>
+  return (
+    <>
+      <div className="pick-hint">
+        <span className="pick-hint-dot" />
+        Escolha algumas — não precisa usar todas
+      </div>
+      {children}
     </>
   )
 }
@@ -106,7 +124,7 @@ export default function PlaybookNode({ node, depth, num }: { node: MNode; depth:
   const hasKids = node.children.length > 0
   const isCollapsed = c.collapsed.has(node.id)
   const isChecked = c.checked.has(node.id)
-  const checkable = node.kind === 'check' || (c.client && node.kind === 'example')
+  const checkable = node.kind === 'check' || node.kind === 'pick' || (c.client && node.kind === 'example')
 
   useEffect(() => {
     if (editing && c.focusId === node.id && ref.current) {
@@ -195,7 +213,15 @@ export default function PlaybookNode({ node, depth, num }: { node: MNode; depth:
     return (
       <div id={`pn-${node.id}`} className={`pn-wrap ${originClass}`}>
         <div className={`pn pn-${node.kind} ${isChecked ? 'is-checked' : ''}`}>
-          {checkable && (
+          {checkable && node.kind === 'pick' ? (
+            <button
+              className={`pn-radio ${isChecked ? 'on' : ''}`}
+              role="checkbox"
+              aria-checked={isChecked}
+              title="Marcar como pergunta escolhida"
+              onClick={() => c.toggleCheck(node.id)}
+            />
+          ) : checkable && (
             <button
               className={`pn-box ${isChecked ? 'on' : ''}`}
               role="checkbox"

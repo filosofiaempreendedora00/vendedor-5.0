@@ -43,7 +43,7 @@ export interface Snippet {
 
 export type SnippetPatch = Partial<Pick<Snippet, 'title' | 'content' | 'category' | 'parts'>>
 
-export type NodeKind = 'item' | 'example' | 'note' | 'check'
+export type NodeKind = 'item' | 'example' | 'note' | 'check' | 'pick'
 
 export interface PNode {
   id: string

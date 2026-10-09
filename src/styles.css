@@ -628,3 +628,29 @@ button { cursor: pointer; }
 .tree-entry .pb-nav-title { padding: 4px 8px; font-size: 9.5px; }
 .tree-entry .pb-nav-item { padding: 4px 8px; font-size: 12.5px; color: #c9cdd6; }
 .tree-entry .pb-nav-num { font-size: 10.5px; }
+
+/* ---------- Perguntas opcionais (escolha algumas) ---------- */
+.pick-hint {
+  display: flex; align-items: center; gap: 8px; margin: 8px 0 4px 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: color-mix(in srgb, var(--c) 75%, white);
+}
+.pick-hint-dot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; }
+.pn-pick {
+  margin: 3px 0 3px 4px; padding: 8px 10px; align-items: flex-start; font-size: 14.5px; line-height: 1.45;
+  color: #aab1bf; border: 1px dashed color-mix(in srgb, var(--c) 35%, transparent); border-radius: 10px; max-width: 72ch;
+}
+.mode-use .pn-pick .pn-text::before { content: '“'; color: var(--c); font-weight: 600; }
+.mode-use .pn-pick .pn-text::after { content: '”'; color: var(--c); font-weight: 600; }
+.pn-pick.is-checked {
+  color: var(--text); border-style: solid; border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+}
+.pn-radio {
+  flex: none; width: 18px; height: 18px; margin-top: 2px; padding: 0; border-radius: 50%; background: transparent;
+  border: 1.5px solid color-mix(in srgb, var(--c) 65%, transparent); display: grid; place-items: center;
+}
+.pn-radio::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); transform: scale(0); transition: transform .14s; }
+.pn-radio.on { border-color: var(--c); }
+.pn-radio.on::after { transform: scale(1); }
+.pn-wrap:has(> .pn-pick) + .pn-wrap > .pn-pick { margin-top: 6px; }
