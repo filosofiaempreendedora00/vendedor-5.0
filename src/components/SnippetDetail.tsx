@@ -32,6 +32,8 @@ function CopyButton({ text, label, className = 'btn btn-ghost btn-sm' }: { text:
 }
 
 export default function SnippetDetail({ config, snippet, categories, autoFocusContent, onUpdate, onDelete }: Props) {
+  const stageIndex = config.stages?.findIndex(st => st.category === snippet.category) ?? -1
+  const stage = stageIndex >= 0 ? config.stages![stageIndex] : null
   const [title, setTitle] = useState(snippet.title)
   const [category, setCategory] = useState(snippet.category)
   const [content, setContent] = useState(snippet.content)
@@ -107,8 +109,8 @@ export default function SnippetDetail({ config, snippet, categories, autoFocusCo
       <header className="detail-head">
         <input className="title-input" value={title} onChange={e => setTitle(e.target.value)} onBlur={saveTitle} onKeyDown={blurOnEnter} aria-label="Nome" />
         <div className="meta-row">
-          <label className="category-field">
-            <span className="category-icon">#</span>
+          <label className={`category-field ${stage ? 'is-stage' : ''}`} style={stage ? { ['--sc' as string]: stage.color } : undefined}>
+            {stage ? <span className="stage-num small">{stageIndex + 1}</span> : <span className="category-icon">#</span>}
             <input
               list="snippet-categories"
               value={category}

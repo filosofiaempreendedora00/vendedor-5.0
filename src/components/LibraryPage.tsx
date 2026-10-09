@@ -21,7 +21,7 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
   const [justCreated, setJustCreated] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [creating, setCreating] = useState(false)
+  const [creating, setCreating] = useState<false | string>(false)
   const [loading, setLoading] = useState(true)
   const { toast, fail } = useToast()
   const kind = config.kind
@@ -39,8 +39,10 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
 
   const categories = useMemo(() => {
     const used = items.map(i => i.category).filter(Boolean)
-    return [...new Set([...used, ...config.categories])].sort((a, b) => a.localeCompare(b, 'pt-BR'))
-  }, [items, config.categories])
+    const stageCats = (config.stages ?? []).map(st => st.category)
+    const rest = [...new Set([...used, ...config.categories])].filter(c => !stageCats.includes(c)).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    return [...stageCats, ...rest]
+  }, [items, config.categories, config.stages])
 
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -52,11 +54,17 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
       const k = i.category || NO_CATEGORY
       map.set(k, [...(map.get(k) ?? []), i])
     }
-    return [...map.entries()].sort(([a], [b]) => (a === NO_CATEGORY ? 1 : b === NO_CATEGORY ? -1 : a.localeCompare(b, 'pt-BR')))
-  }, [items, query])
+    const stageCats = (config.stages ?? []).map(st => st.category)
+    const others = [...map.entries()]
+      .filter(([k]) => !stageCats.includes(k))
+      .sort(([a], [b]) => (a === NO_CATEGORY ? 1 : b === NO_CATEGORY ? -1 : a.localeCompare(b, 'pt-BR')))
+    // Etapas aparecem sempre, na ordem, mesmo vazias (escondidas só durante uma busca sem resultado nelas)
+    const staged = stageCats.map(k => [k, map.get(k) ?? []] as [string, Snippet[]]).filter(([, l]) => !q || l.length)
+    return [...staged, ...others]
+  }, [items, query, config.stages])
 
   const selected = items.find(i => i.id === selectedId) ?? null
-  const openNew = useCallback(() => setCreating(true), [])
+  const openNew = useCallback(() => setCreating(''), [])
 
   async function create(title: string, category: string) {
     try {
@@ -102,6 +110,8 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
   }
 
   const showGroups = groups.length > 1 || (groups.length === 1 && groups[0][0] !== NO_CATEGORY)
+  const stageOf = (cat: string) => config.stages?.findIndex(st => st.category === cat) ?? -1
+  const firstOther = groups.findIndex(([cat]) => stageOf(cat) < 0)
 
   return (
     <Layout
@@ -112,19 +122,44 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
       onQuery={setQuery}
       searchPlaceholder={config.search}
       toast={toast}
-      overlay={creating && <NewSnippetModal config={config} categories={categories} onCancel={() => setCreating(false)} onCreate={create} />}
+      overlay={
+        creating !== false && (
+          <NewSnippetModal config={config} categories={categories} initialCategory={creating} onCancel={() => setCreating(false)} onCreate={create} />
+        )
+      }
       list={
         <>
           {loading && <div className="muted pad">Carregando…</div>}
-          {!loading && groups.length === 0 && (
-            <div className="muted pad">{items.length ? 'Nada encontrado.' : config.emptyList}</div>
+          {!loading && groups.length === 0 && items.length > 0 && (
+            <div className="muted pad">Nada encontrado.</div>
           )}
-          {groups.map(([cat, list]) => (
-            <div key={cat} className="list-group">
-              {showGroups && (
-                <div className="list-group-title">
-                  {cat} <span className="list-group-count">{list.length}</span>
+          {!loading && items.length === 0 && !config.stages && <div className="muted pad">{config.emptyList}</div>}
+          {groups.map(([cat, list], gi) => {
+            const si = stageOf(cat)
+            const stage = si >= 0 ? config.stages![si] : null
+            return (
+            <div key={cat} className={`list-group ${stage ? 'stage' : ''}`} style={stage ? { ['--sc' as string]: stage.color } : undefined}>
+              {stage ? (
+                <div className="stage-head">
+                  <span className="stage-num">{si + 1}</span>
+                  <span className="stage-text">
+                    <span className="stage-title">{stage.title}</span>
+                    <span className="stage-hint">{stage.hint}</span>
+                  </span>
+                  <button className="stage-add" title={`Nova mensagem em ${stage.title}`} onClick={() => setCreating(stage.category)}>＋</button>
                 </div>
+              ) : (
+                showGroups && (
+                  <>
+                    {config.stages && gi === firstOther && <div className="stage-others">Outras</div>}
+                    <div className="list-group-title">
+                      {cat} <span className="list-group-count">{list.length}</span>
+                    </div>
+                  </>
+                )
+              )}
+              {stage && list.length === 0 && (
+                <button className="stage-empty" onClick={() => setCreating(stage.category)}>+ Adicionar a primeira mensagem desta etapa</button>
               )}
               {list.map(s => {
                 const multi = s.parts.length > 0
@@ -178,7 +213,8 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
                 )
               })}
             </div>
-          ))}
+            )
+          })}
         </>
       }
       main={

@@ -1,5 +1,13 @@
 import type { SnippetKind } from '../types'
 
+/** Etapa da cadência: as categorias com estes nomes viram blocos numerados, nesta ordem. */
+export interface Stage {
+  category: string
+  title: string
+  hint: string
+  color: string
+}
+
 export interface LibraryConfig {
   kind: SnippetKind
   noun: string
@@ -13,6 +21,7 @@ export interface LibraryConfig {
   editorPlaceholder: string
   mono: boolean
   categories: string[]
+  stages?: Stage[]
 }
 
 export const LIBRARIES: Record<SnippetKind, LibraryConfig> = {
@@ -28,7 +37,12 @@ export const LIBRARIES: Record<SnippetKind, LibraryConfig> = {
     copyLabel: 'Copiar mensagem',
     editorPlaceholder: 'Escreva a mensagem exatamente como vai enviar ao lead…',
     mono: false,
-    categories: ['Primeiro contato', 'Confirmação de reunião', 'Follow-up', 'Pós-reunião', 'Proposta', 'Objeções', 'Reativação'],
+    categories: ['Primeiro contato', 'Confirmação de reunião', 'Proposta', 'Objeções'],
+    stages: [
+      { category: 'Pós-reunião', title: 'Pós-reunião', hint: 'Logo depois da call', color: '#34d399' },
+      { category: 'Follow-up de valor', title: 'Follow-ups de valor', hint: 'Manter a conversa viva entregando valor', color: '#9a8dff' },
+      { category: 'Aquecedor', title: 'Aquecedor', hint: 'Reaquecer leads que estão esfriando — inclui o ultimato', color: '#f0a35e' },
+    ],
   },
   prompts: {
     kind: 'prompts',

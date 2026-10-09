@@ -4,13 +4,14 @@ import type { LibraryConfig } from '../lib/libraries'
 interface Props {
   config: LibraryConfig
   categories: string[]
+  initialCategory?: string
   onCancel: () => void
   onCreate: (title: string, category: string) => Promise<void>
 }
 
-export default function NewSnippetModal({ config, categories, onCancel, onCreate }: Props) {
+export default function NewSnippetModal({ config, categories, initialCategory = '', onCancel, onCreate }: Props) {
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState(initialCategory)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function NewSnippetModal({ config, categories, onCancel, onCreate
           <input autoFocus required value={title} onChange={e => setTitle(e.target.value)} placeholder={config.namePlaceholder} />
         </label>
         <label className="field">
-          <span>Categoria (opcional)</span>
+          <span>{config.stages ? 'Etapa / categoria' : 'Categoria (opcional)'}</span>
           <input list="new-snippet-categories" value={category} onChange={e => setCategory(e.target.value)} placeholder="Escolha ou digite uma nova" />
           <datalist id="new-snippet-categories">
             {categories.map(c => <option key={c} value={c} />)}
