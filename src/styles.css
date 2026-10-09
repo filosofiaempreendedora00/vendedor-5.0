@@ -610,3 +610,21 @@ button { cursor: pointer; }
 
 .category-field.is-stage { border-color: color-mix(in srgb, var(--sc) 45%, transparent); background: color-mix(in srgb, var(--sc) 8%, var(--panel)); }
 .stage-num.small { width: 20px; height: 20px; border-radius: 6px; font-size: 12px; }
+
+/* ---------- Lista do Processo: estrutura aninhada no item ---------- */
+.tree-item { flex-direction: row; align-items: flex-start; gap: 6px; padding-left: 6px; cursor: pointer; }
+.tree-item-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.tree-toggle {
+  flex: none; width: 22px; height: 22px; margin-top: -1px; padding: 0; border: none; border-radius: 6px;
+  background: none; color: var(--muted); display: grid; place-items: center;
+}
+.tree-toggle:hover { background: var(--bg); color: var(--text); }
+.tree-chev { width: 15px; height: 15px; transition: transform .15s; }
+.tree-chev.open { transform: rotate(90deg); }
+.tree-entry.open .pb-outline {
+  margin: 4px 0 10px 19px; padding: 4px 0 2px 8px; border-left: 1px solid var(--border);
+}
+.tree-entry .pb-nav-group { margin-bottom: 8px; }
+.tree-entry .pb-nav-title { padding: 4px 8px; font-size: 9.5px; }
+.tree-entry .pb-nav-item { padding: 4px 8px; font-size: 12.5px; color: #c9cdd6; }
+.tree-entry .pb-nav-num { font-size: 10.5px; }

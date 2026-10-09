@@ -59,6 +59,9 @@ export default function PlaybookPage({ repo, ...shell }: Props) {
   const [showVersions, setShowVersions] = useState(false)
   const [versionLabel, setVersionLabel] = useState<string | null>(null)
   const [creatingClient, setCreatingClient] = useState(false)
+  const [outlineOpen, setOutlineOpen] = useState(() => {
+    try { return localStorage.getItem('closer-lab:outline-open') === '1' } catch { return false }
+  })
   const { toast, fail } = useToast()
 
   // Carrega; na primeira vez, importa o processo v11 (o ref evita rodar duas vezes)
@@ -88,6 +91,9 @@ export default function PlaybookPage({ repo, ...shell }: Props) {
   useEffect(() => {
     try { localStorage.setItem(VIEW_KEY, view) } catch { /* ignora */ }
   }, [view])
+  useEffect(() => {
+    try { localStorage.setItem('closer-lab:outline-open', outlineOpen ? '1' : '0') } catch { /* ignora */ }
+  }, [outlineOpen])
 
   const client = view === MASTER ? null : clients.find(c => c.id === view) ?? null
 
@@ -265,16 +271,49 @@ export default function PlaybookPage({ repo, ...shell }: Props) {
     </div>
   )
 
+  const Chev = ({ open }: { open: boolean }) => (
+    <svg className={`tree-chev ${open ? 'open' : ''}`} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7.5 5 12.5 10 7.5 15" />
+    </svg>
+  )
+
+  /** Item da lista com a estrutura do roteiro aninhada (recolhida por padrão). */
+  const entry = (id: string, title: string, meta: React.ReactNode) => {
+    const active = view === id
+    const open = active && outlineOpen
+    return (
+      <div key={id} className={`tree-entry ${open ? 'open' : ''}`}>
+        <div className={`meeting-item tree-item ${active ? 'active' : ''}`} role="button" tabIndex={0} onClick={() => selectView(id)} onKeyDown={e => e.key === 'Enter' && selectView(id)}>
+          <button
+            className="tree-toggle"
+            title={open ? 'Recolher estrutura' : 'Ver estrutura'}
+            onClick={e => {
+              e.stopPropagation()
+              if (!active) {
+                selectView(id)
+                setOutlineOpen(true)
+              } else setOutlineOpen(o => !o)
+            }}
+          >
+            <Chev open={open} />
+          </button>
+          <span className="tree-item-text">
+            <span className="meeting-item-title">{title}</span>
+            <span className="meeting-item-meta">{meta}</span>
+          </span>
+        </div>
+        {open && outline}
+      </div>
+    )
+  }
+
+  const namedVersions = versions.filter(v => !v.label.startsWith('Antes '))
+
   const sidebar = master ? (
     <>
       <div className="list-group">
         <div className="list-group-title">Modelo</div>
-        <button className={`meeting-item ${view === MASTER ? 'active' : ''}`} onClick={() => selectView(MASTER)}>
-          <span className="meeting-item-title">Processo padrão</span>
-          <span className="meeting-item-meta">
-            <span>{versions[0] ? `Última versão: ${versions[0].label}` : 'Sem versões salvas'}</span>
-          </span>
-        </button>
+        {entry(MASTER, 'Processo padrão', <span>Base de todos os roteiros{namedVersions[0] ? ` · ${namedVersions[0].label}` : ''}</span>)}
       </div>
 
       <div className="list-group">
@@ -284,21 +323,15 @@ export default function PlaybookPage({ repo, ...shell }: Props) {
         {clients.length === 0 && <div className="muted pad small">Nenhum roteiro ainda. Crie um para cada reunião.</div>}
         {clients.map(c => {
           const st = ov.overlayStats(c.overlay)
-          return (
-            <button key={c.id} className={`meeting-item ${view === c.id ? 'active' : ''}`} onClick={() => selectView(c.id)}>
-              <span className="meeting-item-title">{c.name}</span>
-              <span className="meeting-item-meta">
-                <span className="ellipsis">{[c.company, formatDate(c.meeting_date)].filter(Boolean).join(' · ')}</span>
-                {st.checked + st.answers > 0 && <span className="count pos" title="Perguntas feitas + anotações">✓ {st.checked + st.answers}</span>}
-              </span>
-            </button>
+          return entry(
+            c.id,
+            c.name,
+            <>
+              <span className="ellipsis">{[c.company, formatDate(c.meeting_date)].filter(Boolean).join(' · ')}</span>
+              {st.checked + st.answers > 0 && <span className="count pos" title="Perguntas feitas + anotações">✓ {st.checked + st.answers}</span>}
+            </>,
           )
         })}
-      </div>
-
-      <div className="list-group">
-        <div className="list-group-title">{client ? `Roteiro de ${client.name}` : 'Estrutura do modelo'}</div>
-        {outline}
       </div>
     </>
   ) : (
