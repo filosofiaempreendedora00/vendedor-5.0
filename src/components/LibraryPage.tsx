@@ -22,6 +22,7 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState<false | string>(false)
+  const [openStage, setOpenStage] = useState(0) // acordeão: só uma etapa aberta (a 1ª por padrão)
   const [loading, setLoading] = useState(true)
   const { toast, fail } = useToast()
   const kind = config.kind
@@ -31,7 +32,12 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
       .listSnippets(kind)
       .then(list => {
         setItems(list)
-        setSelectedId(list[0]?.id ?? null)
+        // Abre na primeira mensagem da primeira etapa que tiver conteúdo
+        const order = (config.stages ?? []).map(st => st.category)
+        const rank = (c: string) => (order.includes(c) ? order.indexOf(c) : order.length)
+        const first = [...list].sort((a, b) => rank(a.category) - rank(b.category))[0]
+        setSelectedId(first?.id ?? null)
+        if (first && order.includes(first.category)) setOpenStage(order.indexOf(first.category))
       })
       .catch(fail)
       .finally(() => setLoading(false))
@@ -137,16 +143,37 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
           {groups.map(([cat, list], gi) => {
             const si = stageOf(cat)
             const stage = si >= 0 ? config.stages![si] : null
+            // Durante uma busca, todas as etapas com resultado ficam abertas
+            const stageOpen = !!stage && (query.trim() ? true : openStage === si)
             return (
-            <div key={cat} className={`list-group ${stage ? 'stage' : ''}`} style={stage ? { ['--sc' as string]: stage.color } : undefined}>
+            <div key={cat} className={`list-group ${stage ? `stage ${stageOpen ? 'stage-open' : 'stage-closed'}` : ''}`} style={stage ? { ['--sc' as string]: stage.color } : undefined}>
               {stage ? (
-                <div className="stage-head">
+                <div
+                  className={`stage-head ${stageOpen ? 'open' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={stageOpen}
+                  onClick={() => setOpenStage(si)}
+                  onKeyDown={e => e.key === 'Enter' && setOpenStage(si)}
+                >
                   <span className="stage-num">{si + 1}</span>
                   <span className="stage-text">
                     <span className="stage-title">{stage.title}</span>
-                    <span className="stage-hint">{stage.hint}</span>
+                    {stageOpen ? <span className="stage-hint">{stage.hint}</span> : <span className="stage-hint">{list.length} {list.length === 1 ? 'mensagem' : 'mensagens'}</span>}
                   </span>
-                  <button className="stage-add" title={`Nova mensagem em ${stage.title}`} onClick={() => setCreating(stage.category)}>＋</button>
+                  <button
+                    className="stage-add"
+                    title={`Nova mensagem em ${stage.title}`}
+                    onClick={e => {
+                      e.stopPropagation()
+                      setOpenStage(si)
+                      setCreating(stage.category)
+                    }}
+                  >
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                      <path d="M8 3v10M3 8h10" />
+                    </svg>
+                  </button>
                 </div>
               ) : (
                 showGroups && (
@@ -158,10 +185,7 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
                   </>
                 )
               )}
-              {stage && list.length === 0 && (
-                <button className="stage-empty" onClick={() => setCreating(stage.category)}>+ Adicionar a primeira mensagem desta etapa</button>
-              )}
-              {list.map(s => {
+              {(!stage || stageOpen) && list.map(s => {
                 const multi = s.parts.length > 0
                 const open = multi && s.id === selectedId
                 return (
