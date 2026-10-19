@@ -31,3 +31,17 @@ export function toEmbedUrl(raw: string | null): string | null {
   }
   return null
 }
+
+/** Link que baixa o arquivo direto (Google Drive); outros links seguem como estão. */
+export function toDownloadUrl(raw: string): string {
+  try {
+    const u = new URL(raw)
+    if (u.hostname.replace(/^www\./, '') === 'drive.google.com') {
+      const id = u.pathname.match(/\/file\/d\/([^/]+)/)?.[1] ?? u.searchParams.get('id')
+      if (id) return `https://drive.google.com/uc?export=download&id=${id}`
+    }
+  } catch {
+    /* link inválido: devolve como veio */
+  }
+  return raw
+}

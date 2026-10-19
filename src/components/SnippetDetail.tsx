@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Snippet, SnippetPart, SnippetPatch } from '../types'
+import type { Snippet, SnippetAttachment, SnippetPart, SnippetPatch } from '../types'
+import { toDownloadUrl } from '../lib/embed'
+import { normalizeUrl } from '../lib/format'
 import { copyText, type LibraryConfig } from '../lib/libraries'
 import { useDirty } from '../lib/unsaved'
 
@@ -28,6 +30,63 @@ function CopyButton({ text, label, className = 'btn btn-ghost btn-sm' }: { text:
     >
       {copied ? 'Copiado ✓' : label}
     </button>
+  )
+}
+
+const DownloadIcon = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="m7 10 5 5 5-5" />
+    <path d="M12 15V3" />
+  </svg>
+)
+
+/** Arquivos da mensagem: um botão de download direto para cada um. */
+function Attachments({ items, onChange }: { items: SnippetAttachment[]; onChange: (a: SnippetAttachment[]) => void }) {
+  const [adding, setAdding] = useState(false)
+  const [label, setLabel] = useState('')
+  const [url, setUrl] = useState('')
+
+  function add(e: React.FormEvent) {
+    e.preventDefault()
+    const u = normalizeUrl(url)
+    if (!u) return
+    onChange([...items, { id: crypto.randomUUID(), label: label.trim() || 'Arquivo', url: u }])
+    setLabel('')
+    setUrl('')
+    setAdding(false)
+  }
+
+  return (
+    <div className="attachments">
+      {items.map(a => (
+        <span key={a.id} className="attachment">
+          <a className="btn btn-download" href={toDownloadUrl(a.url)} target="_blank" rel="noreferrer" title="Baixar arquivo">
+            <DownloadIcon /> Baixar {a.label}
+          </a>
+          <a className="attachment-open" href={a.url} target="_blank" rel="noreferrer" title="Abrir no navegador">
+            abrir ↗
+          </a>
+          <button
+            className="pn-tool danger"
+            title="Remover anexo"
+            onClick={() => confirm(`Remover o anexo "${a.label}"?`) && onChange(items.filter(x => x.id !== a.id))}
+          >
+            ×
+          </button>
+        </span>
+      ))}
+      {adding ? (
+        <form className="attachment-form" onSubmit={add}>
+          <input autoFocus value={label} onChange={e => setLabel(e.target.value)} placeholder="Nome (ex.: vídeo do evento)" />
+          <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Link do arquivo (Google Drive, etc.)" />
+          <button className="btn btn-primary btn-sm" disabled={!url.trim()}>Anexar</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAdding(false)}>Cancelar</button>
+        </form>
+      ) : (
+        <button className="attachment-add" onClick={() => setAdding(true)}>+ Anexar arquivo</button>
+      )}
+    </div>
   )
 }
 
@@ -138,6 +197,7 @@ export default function SnippetDetail({ config, snippet, categories, autoFocusCo
             </>
           )}
         </div>
+        <Attachments items={snippet.attachments} onChange={attachments => onUpdate({ attachments })} />
       </header>
 
       {multi ? (

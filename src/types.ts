@@ -31,17 +31,25 @@ export interface SnippetPart {
   text: string
 }
 
+/** Arquivo anexado por link (ex.: vídeo no Google Drive), com botão de download. */
+export interface SnippetAttachment {
+  id: string
+  label: string
+  url: string
+}
+
 export interface Snippet {
   id: string
   title: string
   content: string
   category: string
   parts: SnippetPart[]
+  attachments: SnippetAttachment[]
   created_at: string
   updated_at: string
 }
 
-export type SnippetPatch = Partial<Pick<Snippet, 'title' | 'content' | 'category' | 'parts'>>
+export type SnippetPatch = Partial<Pick<Snippet, 'title' | 'content' | 'category' | 'parts' | 'attachments'>>
 
 export type NodeKind = 'item' | 'example' | 'note' | 'check' | 'pick'
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { byTitle, type Repo } from '../lib/repo'
 import type { Snippet, SnippetPatch } from '../types'
 import { copyText, type LibraryConfig } from '../lib/libraries'
+import { toDownloadUrl } from '../lib/embed'
 import { track } from '../lib/unsaved'
 import { useToast } from '../lib/useToast'
 import Layout, { type ShellProps } from './Layout'
@@ -197,7 +198,25 @@ export default function LibraryPage({ repo, config, ...shell }: Props) {
                       onClick={() => setSelectedId(s.id)}
                       onKeyDown={e => e.key === 'Enter' && setSelectedId(s.id)}
                     >
-                      <span className="meeting-item-title">{s.title}</span>
+                      <span className="item-title-row">
+                        <span className="meeting-item-title">{s.title}</span>
+                        {s.attachments.length > 0 && (
+                          <a
+                            className="quick-download"
+                            href={toDownloadUrl(s.attachments[0].url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={`Baixar ${s.attachments[0].label}`}
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="m7 10 5 5 5-5" />
+                              <path d="M12 15V3" />
+                              <path d="M5 21h14" />
+                            </svg>
+                          </a>
+                        )}
+                      </span>
                       <span className="meeting-item-meta">
                         <span className="ellipsis">{multi ? `${s.parts.length} partes · ${s.parts.map(p => p.label).join(', ')}` : s.content.trim().split('\n')[0] || 'Vazio'}</span>
                       </span>
