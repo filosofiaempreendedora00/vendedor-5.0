@@ -38,7 +38,7 @@ export function toDownloadUrl(raw: string): string {
     const u = new URL(raw)
     if (u.hostname.replace(/^www\./, '') === 'drive.google.com') {
       const id = u.pathname.match(/\/file\/d\/([^/]+)/)?.[1] ?? u.searchParams.get('id')
-      if (id) return `https://drive.google.com/uc?export=download&id=${id}`
+      if (id) return `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`
     }
   } catch {
     /* link inválido: devolve como veio */
